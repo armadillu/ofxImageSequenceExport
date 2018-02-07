@@ -1,5 +1,5 @@
 //
-//  ImageSequenceExport.h
+//  ofxImageSequenceExport.h
 //  BasicSketch
 //
 //  Created by Oriol Ferrer Mesià on 07/02/2018.
@@ -10,12 +10,12 @@
 #include "ofMain.h"
 #include <future>
 
-class ImageSequenceExport{
+class ofxImageSequenceExport{
 
 	const string fileNamePattern = "%08i"; //8 digits
 public:
 	
-	ImageSequenceExport();
+	ofxImageSequenceExport();
 
 	void setup(int width, int height, string fileExtension = "png", GLint internalformat = GL_RGB, int num_samples = 0);
 
@@ -25,11 +25,13 @@ public:
 
 	void draw();
 
-	void startExport(string );
+
+	void startExport();
 	bool isExporting();
 	void stopExport();
 
-	void setNumThreads(int t);
+	void setExportDir(string dir);
+	void setMaxThreads(int t);
 	void setMaxPendingTasks(int m);
 	void update();
 
@@ -43,7 +45,7 @@ protected:
 
 	struct ExportState{
 		bool exporting;
-		string exportFolder;
+		string exportFolder = "ImgSequenceExport";
 		string fileExtension;
 		int exportedFrameCounter;
 		int maxThreads = std::thread::hardware_concurrency();

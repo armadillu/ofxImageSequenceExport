@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ImageSequenceExport.h"
+#include "ofxImageSequenceExport.h"
 
 class ofApp : public ofBaseApp{
 
@@ -17,6 +17,6 @@ public:
 	// APP SETUP ////////////////////////////////////////////
 	float p1;
 
-	ImageSequenceExport exp;
+	ofxImageSequenceExport exp;
 
 };

@@ -1,17 +1,17 @@
 //
-//  ImageSequenceExport.cpp
+//  ofxImageSequenceExport.cpp
 //  BasicSketch
 //
 //  Created by Oriol Ferrer Mesià on 07/02/2018.
 //
 //
 
-#include "ImageSequenceExport.h"
+#include "ofxImageSequenceExport.h"
 
-ImageSequenceExport::ImageSequenceExport(){}
+ofxImageSequenceExport::ofxImageSequenceExport(){}
 
 
-void ImageSequenceExport::setup(int width, int height, string fileExtension, GLint internalformat, int num_samples){
+void ofxImageSequenceExport::setup(int width, int height, string fileExtension, GLint internalformat, int num_samples){
 
 	fboSettings.width = width;
 	fboSettings.height = height;
@@ -30,16 +30,19 @@ void ImageSequenceExport::setup(int width, int height, string fileExtension, GLi
 }
 
 
-void ImageSequenceExport::setNumThreads(int t){
+void ofxImageSequenceExport::setMaxThreads(int t){
 	state.maxThreads = MAX(t,1);
 }
 
-void ImageSequenceExport::setMaxPendingTasks(int t){
+void ofxImageSequenceExport::setMaxPendingTasks(int t){
 	state.maxPending = MAX(t,1);
 }
 
+void ofxImageSequenceExport::setExportDir(string dir){
+	state.exportFolder = dir;
+}
 
-void ImageSequenceExport::begin(ofCamera& cam){
+void ofxImageSequenceExport::begin(ofCamera& cam){
 	if(state.exporting){
 		ofPushView();
 		fbo.begin();
@@ -49,7 +52,7 @@ void ImageSequenceExport::begin(ofCamera& cam){
 }
 
 
-void ImageSequenceExport::begin(){
+void ofxImageSequenceExport::begin(){
 	if(state.exporting){
 		ofPushView();
 		fbo.begin();
@@ -59,7 +62,7 @@ void ImageSequenceExport::begin(){
 }
 
 
-void ImageSequenceExport::end(){
+void ofxImageSequenceExport::end(){
 
 	if(state.exporting){
 
@@ -83,44 +86,43 @@ void ImageSequenceExport::end(){
 }
 
 
-std::string ImageSequenceExport::fileNameForFrame(int frame){
+std::string ofxImageSequenceExport::fileNameForFrame(int frame){
 	char buf[1024];
 	sprintf(buf, fileNamePattern.c_str(), frame);
 	return state.exportFolder + "/" + "frame_" + string(buf) + "." + state.fileExtension;
 }
 
 
-void ImageSequenceExport::startExport(string folder){
+void ofxImageSequenceExport::startExport(){
 	if(!state.exporting){
 		state.exporting = true;
 		state.exportedFrameCounter = 0;
-		state.exportFolder = folder;
 		state.avgExportTime = -1;
-		if(ofDirectory::doesDirectoryExist(folder)){
-			ofDirectory::removeDirectory(folder, true);
+		if(ofDirectory::doesDirectoryExist(state.exportFolder)){
+			ofDirectory::removeDirectory(state.exportFolder, true);
 		}
-		ofDirectory::createDirectory(folder, true, true);
+		ofDirectory::createDirectory(state.exportFolder, true, true);
 	}else{
-		ofLogError("ImageSequenceExport") << "can't startExport() bc we already are exporting!";
+		ofLogError("ofxImageSequenceExport") << "can't startExport() bc we already are exporting!";
 	}
 }
 
 
-bool ImageSequenceExport::isExporting(){
+bool ofxImageSequenceExport::isExporting(){
 	return state.exporting;
 }
 
 
-void ImageSequenceExport::stopExport(){
+void ofxImageSequenceExport::stopExport(){
 	state.exporting = false;
 }
 
-int ImageSequenceExport::getNumPendingJobs(){
+int ofxImageSequenceExport::getNumPendingJobs(){
 	return pendingJobs.size();
 }
 
 
-void ImageSequenceExport::update(){
+void ofxImageSequenceExport::update(){
 
 	updateTasks();
 	int nSleeps = 0;
@@ -134,12 +136,12 @@ void ImageSequenceExport::update(){
 	}
 
 	if(nSleeps > 0){
-		ofLogWarning("ImageSequenceExport") << "too many pending tasks! blocked update() for " << numSleepMS * nSleeps << " ms";
+		ofLogWarning("ofxImageSequenceExport") << "too many pending tasks! blocked update() for " << numSleepMS * nSleeps << " ms";
 	}
 }
 
 
-void ImageSequenceExport::updateTasks(){
+void ofxImageSequenceExport::updateTasks(){
 
 	//check for finished tasks
 	for(int i = tasks.size() - 1; i >= 0; i--){
@@ -161,14 +163,14 @@ void ImageSequenceExport::updateTasks(){
 	vector<size_t> spawnedJobs;
 	for(int i = 0; i < pendingJobs.size(); i++){
 		if(tasks.size() < state.maxThreads){
-			tasks.push_back( std::async(std::launch::async, &ImageSequenceExport::runJob, this, pendingJobs[i]));
+			tasks.push_back( std::async(std::launch::async, &ofxImageSequenceExport::runJob, this, pendingJobs[i]));
 			spawnedJobs.push_back(i);
 		}else{
 			break;
 		}
 	}
 
-	//if(spawnedJobs.size()) ofLogNotice("ImageSequenceExport") << "spwned " << spawnedJobs.size() << " jobs";
+	//if(spawnedJobs.size()) ofLogNotice("ofxImageSequenceExport") << "spwned " << spawnedJobs.size() << " jobs";
 
 	//removed newly spawned jobs
 	for(int i = spawnedJobs.size() - 1; i >= 0; i--){
@@ -176,13 +178,13 @@ void ImageSequenceExport::updateTasks(){
 	}
 }
 
-void ImageSequenceExport::draw(){
+void ofxImageSequenceExport::draw(){
 
 	if(state.exporting || tasks.size() || pendingJobs.size()){
 		if(state.exporting){
 			fbo.draw(0,0);
 		}
-		string msg = "### ImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
+		string msg = "### ofxImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
 		"\nPending Export Jobs: " + ofToString(pendingJobs.size()) +
 		"\nCurrent Threads: " + ofToString(tasks.size());
 		if (state.avgExportTime > 0){
@@ -193,7 +195,7 @@ void ImageSequenceExport::draw(){
 }
 
 
-float ImageSequenceExport::runJob(ExportJob j){
+float ofxImageSequenceExport::runJob(ExportJob j){
 	bool timeSample = (j.frameID%30 == 0);
 	float t;
 	if(timeSample) t = ofGetElapsedTimef();

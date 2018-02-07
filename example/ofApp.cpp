@@ -9,12 +9,15 @@ void ofApp::setup(){
 	ofBackground(22);
 
 	exp.setup(ofGetWidth(), ofGetHeight(), "tiff", GL_RGB, 4);
-	exp.setNumThreads(6);
+	exp.setMaxThreads(6);
 }
 
 
 void ofApp::update(){
-	exp.update();
+	exp.update(); 	//this will block for a few millisecond if the pending exports queue gets too long
+					//you can control this behavior by setting setMaxPendingTasks() to a very large number
+					//the only risk is running out of memory, as every frame is stored in RAM in the queue.
+					//Allowing more threads (with setMaxThreads()) migh speed up the processing too
 }
 
 
@@ -48,7 +51,8 @@ void ofApp::keyPressed(int key){
 		if(exp.isExporting()){
 			exp.stopExport();
 		}else{
-			exp.startExport("exportFolder"); //this will overwrite - careful!
+			exp.setExportDir("exportFolder");
+			exp.startExport(); //this will overwrite - careful!
 		}
 	}
 }
