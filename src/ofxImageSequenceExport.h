@@ -18,13 +18,16 @@ public:
 	ofxImageSequenceExport();
 
 	void setup(int width, int height, string fileExtension = "png", GLint internalformat = GL_RGB, int num_samples = 0);
+	void setup(const ofFbo::Settings & settings, const string & fileExtension);
 
 	void begin();
 	void begin(ofCamera& cam);
 	void end();
 
 	void draw();
-
+	void drawStatus(int x, int y);
+	string getStatus();
+	ofFbo & getFbo(){return fbo;};
 
 	void startExport();
 	bool isExporting();
@@ -36,7 +39,7 @@ public:
 	void update();
 
 	int getNumPendingJobs();
-	
+
 protected:
 
 	ofFbo::Settings fboSettings;

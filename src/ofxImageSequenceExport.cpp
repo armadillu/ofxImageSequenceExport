@@ -13,13 +13,20 @@ ofxImageSequenceExport::ofxImageSequenceExport(){}
 
 void ofxImageSequenceExport::setup(int width, int height, string fileExtension, GLint internalformat, int num_samples){
 
-	fboSettings.width = width;
-	fboSettings.height = height;
-	fboSettings.internalformat = internalformat;
-	fboSettings.numSamples = num_samples;
-	fboSettings.useDepth = true;
+	ofFbo::Settings s;
+	s.width = width;
+	s.height = height;
+	s.internalformat = internalformat;
+	s.numSamples = num_samples;
+	s.useDepth = true;
 
-	fbo.allocate(fboSettings);
+	setup(s, fileExtension);
+}
+
+void ofxImageSequenceExport::setup(const ofFbo::Settings & settings, const string & fileExtension){
+
+	fboSettings = settings;
+	fbo.allocate(settings);
 
 	fbo.begin();
 	ofClear(0);
@@ -178,19 +185,30 @@ void ofxImageSequenceExport::updateTasks(){
 	}
 }
 
+string ofxImageSequenceExport::getStatus(){
+
+	string msg = "### ofxImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
+	"\nPending Export Jobs: " + ofToString(pendingJobs.size()) +
+	"\nCurrent Threads: " + ofToString(tasks.size());
+	if (state.avgExportTime > 0){
+		msg += "\nAvg Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms.";
+	}
+	return msg;
+}
+
+void ofxImageSequenceExport::drawStatus(int x, int y){
+	if(state.exporting || tasks.size() || pendingJobs.size()){
+		ofDrawBitmapStringHighlight(getStatus(), glm::vec2(x, y), ofColor::red, ofColor::black);
+	}
+}
+
 void ofxImageSequenceExport::draw(){
 
 	if(state.exporting || tasks.size() || pendingJobs.size()){
 		if(state.exporting){
 			fbo.draw(0,0);
 		}
-		string msg = "### ofxImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
-		"\nPending Export Jobs: " + ofToString(pendingJobs.size()) +
-		"\nCurrent Threads: " + ofToString(tasks.size());
-		if (state.avgExportTime > 0){
-			msg += "\nAvg Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms.";
-		}
-		ofDrawBitmapStringHighlight(msg, glm::vec2(20, 20), ofColor::red, ofColor::black);
+		ofDrawBitmapStringHighlight(getStatus(), glm::vec2(20, 20), ofColor::red, ofColor::black);
 	}
 }
 
