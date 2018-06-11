@@ -7,6 +7,7 @@
 //
 
 #include "ofxImageSequenceExport.h"
+#include <sys/stat.h>
 
 ofxImageSequenceExport::ofxImageSequenceExport(){}
 
@@ -100,11 +101,13 @@ std::string ofxImageSequenceExport::fileNameForFrame(int frame){
 }
 
 
-void ofxImageSequenceExport::startExport(){
+void ofxImageSequenceExport::startExport(int nFrames){
 	if(!state.exporting){
 		state.exporting = true;
 		state.exportedFrameCounter = 0;
 		state.avgExportTime = -1;
+		state.avgFileSize = -1;
+		state.expectedRenderLen = nFrames;
 		if(ofDirectory::doesDirectoryExist(state.exportFolder)){
 			ofDirectory::removeDirectory(state.exportFolder, true);
 		}
@@ -122,6 +125,9 @@ bool ofxImageSequenceExport::isExporting(){
 
 void ofxImageSequenceExport::stopExport(){
 	state.exporting = false;
+	state.avgExportTime = -1;
+	state.avgFileSize = -1;
+	state.expectedRenderLen = -1;
 }
 
 int ofxImageSequenceExport::getNumPendingJobs(){
@@ -134,16 +140,17 @@ void ofxImageSequenceExport::update(){
 	updateTasks();
 	int nSleeps = 0;
 
-	int numSleepMS = 5;
+	int numSleepMS = 20;
+	int maxSleepTimeMS = 500;
 	//throttle down export a bit if too many jobs pending
-	while(pendingJobs.size() > state.maxPending && nSleeps < 10){
+	while(pendingJobs.size() > state.maxPending && nSleeps * numSleepMS < maxSleepTimeMS){
 		ofSleepMillis(numSleepMS);
 		updateTasks();
 		nSleeps++;
 	}
 
 	if(nSleeps > 0){
-		ofLogWarning("ofxImageSequenceExport") << "too many pending tasks! blocked update() for " << numSleepMS * nSleeps << " ms";
+		ofLogVerbose("ofxImageSequenceExport") << "too many pending tasks! blocked update() for " << numSleepMS * nSleeps << " ms";
 	}
 }
 
@@ -154,12 +161,21 @@ void ofxImageSequenceExport::updateTasks(){
 	for(int i = tasks.size() - 1; i >= 0; i--){
 		std::future_status status = tasks[i].wait_for(std::chrono::microseconds(0));
 		if(status == std::future_status::ready){
-			float runTime = tasks[i].get();
-			if(runTime > 0.0f){
+			auto job = tasks[i].get();
+			if(job.runTime > 0.0f){
 				if(state.avgExportTime < 0){
-					state.avgExportTime = runTime;
+					state.avgExportTime = job.runTime;
 				}else{
-					state.avgExportTime = ofLerp(state.avgExportTime, runTime, 0.15);
+					state.avgExportTime = ofLerp(state.avgExportTime, job.runTime, 0.1);
+				}
+			}
+
+			if(job.fileSizeBytes > 0){
+				float fileSize = float(job.fileSizeBytes) / float(1024 * 1024);
+				if(state.avgFileSize < 0){
+					state.avgFileSize = fileSize;
+				}else{
+					state.avgFileSize = ofLerp(state.avgFileSize, fileSize, 0.1);
 				}
 			}
 			tasks.erase(tasks.begin() + i);
@@ -188,10 +204,16 @@ void ofxImageSequenceExport::updateTasks(){
 string ofxImageSequenceExport::getStatus(){
 
 	string msg = "### ofxImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
-	"\nPending Export Jobs: " + ofToString(pendingJobs.size()) +
-	"\nCurrent Threads: " + ofToString(tasks.size());
+	"\nExport Queue Length: " + ofToString(pendingJobs.size()) + " ( max queue length is " + ofToString(state.maxPending) + ")" +
+	"\nCurrentnly Executing Jobs: " + ofToString(tasks.size()) + " ( max of " + ofToString(state.maxThreads) + " concurrent jobs )";
 	if (state.avgExportTime > 0){
-		msg += "\nAvg Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms.";
+		msg += "\nAvg. Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms";
+	}
+	if (state.avgFileSize > 0){
+		msg += "\nAvg. Frame File Size: " + ofToString(state.avgFileSize, 2) + " MBytes";
+	}
+	if(state.expectedRenderLen > 0 && state.avgFileSize > 0){
+		msg += "\nEstimated Total Sequence File Size: " + ofToString(state.expectedRenderLen * state.avgFileSize , 1) + " MBytes";
 	}
 	return msg;
 }
@@ -213,16 +235,29 @@ void ofxImageSequenceExport::draw(){
 }
 
 
-float ofxImageSequenceExport::runJob(ExportJob j){
+ofxImageSequenceExport::ExportJob ofxImageSequenceExport::runJob(ExportJob j){
+
+	#ifdef TARGET_WIN32
+	#elif defined(TARGET_LINUX)
+	pthread_setname_np(("ofxImageSequenceExport job " + ofToString(j.frameID)).c_str());
+	#else
+	pthread_setname_np(("ofxImageSequenceExport job " + ofToString(j.frameID)).c_str());
+	#endif
+
 	bool timeSample = (j.frameID%30 == 0);
 	float t;
 	if(timeSample) t = ofGetElapsedTimef();
 	ofSaveImage(*j.pixels, j.fileName);
 	if(timeSample){
 		j.runTime = (ofGetElapsedTimef() - t);
+		//check file size too
+		struct stat stat_buf;
+		int rc = stat(ofToDataPath(j.fileName,true).c_str(), &stat_buf);
+		j.fileSizeBytes = rc == 0 ? stat_buf.st_size : -1;
 	}
 	delete j.pixels;
-	return j.runTime;
+	j.pixels = nullptr;
+	return j;
 }
 
 

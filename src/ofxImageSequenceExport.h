@@ -29,14 +29,16 @@ public:
 	string getStatus();
 	ofFbo & getFbo(){return fbo;};
 
-	void startExport();
+	void startExport(int nFrames = -1); //nFrames is only used to print guestimates of how much space you will need to store the sequence
+										//no need to supply it at all - will not stop render when the # is reached either
 	bool isExporting();
 	void stopExport();
 
 	void setExportDir(string dir);
 	void setMaxThreads(int t);
 	void setMaxPendingTasks(int m);
-	void update();
+	void update(); //this call usually doesnt block, but it will when the queue is too long
+					//so that bg threads can catch up
 
 	int getNumPendingJobs();
 
@@ -51,9 +53,11 @@ protected:
 		string exportFolder = "ImgSequenceExport";
 		string fileExtension;
 		int exportedFrameCounter;
-		int maxThreads = std::thread::hardware_concurrency();
-		int maxPending = std::thread::hardware_concurrency() * 2;
+		int maxThreads = std::max((int)std::thread::hardware_concurrency() - 1,(int)1);
+		int maxPending = maxThreads * 2;
+		int expectedRenderLen = -1;
 		float avgExportTime = -1;
+		float avgFileSize = -1; //in MegaBytes!
 	};
 
 	struct ExportJob{
@@ -61,16 +65,17 @@ protected:
 		int frameID;
 		string fileName;
 		float runTime = -1;
+		long long fileSizeBytes = -1;
 	};
 
 	ExportState state;
 
 	vector<ExportJob> pendingJobs;
-	vector<std::future<float>> tasks;
+	vector<std::future<ExportJob>> tasks;
 
 	std::string fileNameForFrame(int frame);
 
-	float runJob(ExportJob j);
+	ExportJob runJob(ExportJob j);
 	void updateTasks();
 
 };
