@@ -42,6 +42,8 @@ public:
 
 	int getNumPendingJobs();
 
+	static std::string bytesToHumanReadable(long long bytes, int decimalPrecision);
+
 protected:
 
 	ofFbo::Settings fboSettings;
@@ -54,7 +56,7 @@ protected:
 		string fileExtension;
 		int exportedFrameCounter;
 		int maxThreads = std::max((int)std::thread::hardware_concurrency() - 1,(int)1);
-		int maxPending = maxThreads * 2;
+		int maxPending = maxThreads * 4;
 		int expectedRenderLen = -1;
 		float avgExportTime = -1;
 		float avgFileSize = -1; //in MegaBytes!

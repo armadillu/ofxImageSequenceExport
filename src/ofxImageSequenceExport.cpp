@@ -210,10 +210,10 @@ string ofxImageSequenceExport::getStatus(){
 		msg += "\nAvg. Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms";
 	}
 	if (state.avgFileSize > 0){
-		msg += "\nAvg. Frame File Size: " + ofToString(state.avgFileSize, 2) + " MBytes";
+		msg += "\nAvg. Frame File Size: " + ofxImageSequenceExport::bytesToHumanReadable(state.avgFileSize * 1024 * 1024, 2) + " MBytes";
 	}
 	if(state.expectedRenderLen > 0 && state.avgFileSize > 0){
-		msg += "\nEstimated Total Sequence File Size: " + ofToString(state.expectedRenderLen * state.avgFileSize , 1) + " MBytes";
+		msg += "\nEstimated Total Sequence File Size: " + ofxImageSequenceExport::bytesToHumanReadable(state.expectedRenderLen * state.avgFileSize * 1024 * 1024 , 1);
 	}
 	return msg;
 }
@@ -247,7 +247,11 @@ ofxImageSequenceExport::ExportJob ofxImageSequenceExport::runJob(ExportJob j){
 	bool timeSample = (j.frameID%30 == 0);
 	float t;
 	if(timeSample) t = ofGetElapsedTimef();
-	ofSaveImage(*j.pixels, j.fileName);
+	try{
+		ofSaveImage(*j.pixels, j.fileName);
+	}catch(std::exception e){
+		ofLogError("ofxImageSequenceExport") << "Exception in ofSaveImage()! " << e.what();
+	}
 	if(timeSample){
 		j.runTime = (ofGetElapsedTimef() - t);
 		//check file size too
@@ -261,3 +265,20 @@ ofxImageSequenceExport::ExportJob ofxImageSequenceExport::runJob(ExportJob j){
 }
 
 
+std::string ofxImageSequenceExport::bytesToHumanReadable(long long bytes, int decimalPrecision){
+	std::string ret;
+	if (bytes < 1024 ){ //if in bytes range
+		ret = ofToString(bytes) + " bytes";
+	}else{
+		if (bytes < 1024 * 1024){ //if in kb range
+			ret = ofToString(bytes / float(1024), decimalPrecision) + " KB";
+		}else{
+			if (bytes < (1024 * 1024 * 1024)){ //if in Mb range
+				ret = ofToString(bytes / float(1024 * 1024), decimalPrecision) + " MB";
+			}else{
+				ret = ofToString(bytes / float(1024 * 1024 * 1024), decimalPrecision) + " GB";
+			}
+		}
+	}
+	return ret;
+}
