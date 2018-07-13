@@ -56,7 +56,7 @@ protected:
 		string fileExtension;
 		int exportedFrameCounter;
 		int maxThreads = std::max((int)std::thread::hardware_concurrency() - 1,(int)1);
-		int maxPending = maxThreads * 4;
+		int maxPending = maxThreads;
 		int expectedRenderLen = -1;
 		float avgExportTime = -1;
 		float avgFileSize = -1; //in MegaBytes!
