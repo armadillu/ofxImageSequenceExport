@@ -93,6 +93,21 @@ void ofxImageSequenceExport::end(){
 	}
 }
 
+void ofxImageSequenceExport::addFrame(ofFbo & fbo){
+
+	if(state.exporting){
+
+		ExportJob job;
+		job.pixels = new ofPixels();
+		fbo.readToPixels(*job.pixels);
+		job.frameID = state.exportedFrameCounter;
+		job.fileName = fileNameForFrame(job.frameID);
+		state.exportedFrameCounter++;
+
+		pendingJobs.push_back(job);
+	}
+}
+
 
 std::string ofxImageSequenceExport::fileNameForFrame(int frame){
 	char buf[1024];

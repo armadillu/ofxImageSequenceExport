@@ -20,9 +20,13 @@ public:
 	void setup(int width, int height, string fileExtension = "png", GLint internalformat = GL_RGB, int num_samples = 0);
 	void setup(const ofFbo::Settings & settings, const string & fileExtension);
 
+	//fbo-like interface
 	void begin();
 	void begin(ofCamera& cam);
 	void end();
+
+	//supply your own fbo interface
+	void addFrame(ofFbo & fbo);
 
 	void draw();
 	void drawStatus(int x, int y);
