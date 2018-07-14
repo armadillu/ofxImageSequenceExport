@@ -11,6 +11,20 @@
 
 ofxImageSequenceExport::ofxImageSequenceExport(){}
 
+ofxImageSequenceExport::~ofxImageSequenceExport(){
+	stopExportAndWait();
+}
+
+void ofxImageSequenceExport::stopExportAndWait(){
+	if(state.exporting){
+		stopExport();
+		ofLogNotice("ofxImageSequenceExport") << "waiting for threads to finish...";
+		for(int i = tasks.size() - 1; i >= 0; i--){
+			auto whatever = tasks[i].get();
+		}
+	}
+}
+
 
 void ofxImageSequenceExport::setup(int width, int height, string fileExtension, GLint internalformat, int num_samples){
 

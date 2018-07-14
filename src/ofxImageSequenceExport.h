@@ -16,6 +16,7 @@ class ofxImageSequenceExport{
 public:
 	
 	ofxImageSequenceExport();
+	~ofxImageSequenceExport();
 
 	void setup(int width, int height, string fileExtension = "png", GLint internalformat = GL_RGB, int num_samples = 0);
 	void setup(const ofFbo::Settings & settings, const string & fileExtension);
@@ -37,6 +38,7 @@ public:
 										//no need to supply it at all - will not stop render when the # is reached either
 	bool isExporting();
 	void stopExport();
+	void stopExportAndWait();
 
 	void setExportDir(string dir);
 	void setMaxThreads(int t);
