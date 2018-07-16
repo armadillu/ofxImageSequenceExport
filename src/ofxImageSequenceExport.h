@@ -57,7 +57,7 @@ protected:
 	ofCamera* cam_ptr = NULL;
 
 	struct ExportState{
-		bool exporting;
+		bool exporting = false;
 		string exportFolder = "ImgSequenceExport";
 		string fileExtension;
 		int exportedFrameCounter;
