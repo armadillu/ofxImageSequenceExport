@@ -215,14 +215,16 @@ void ofxImageSequenceExport::updateTasks(){
 	vector<size_t> spawnedJobs;
 	for(int i = 0; i < pendingJobs.size(); i++){
 		if(tasks.size() < state.maxThreads){
-			tasks.push_back( std::async(std::launch::async, &ofxImageSequenceExport::runJob, this, pendingJobs[i]));
+			try{
+				tasks.push_back( std::async(std::launch::async, &ofxImageSequenceExport::runJob, this, pendingJobs[i]));
+			}catch(exception e){
+				ofLogError("ofxImageSequenceExport") << "Exception at async() " <<  e.what();
+			}
 			spawnedJobs.push_back(i);
 		}else{
 			break;
 		}
 	}
-
-	//if(spawnedJobs.size()) ofLogNotice("ofxImageSequenceExport") << "spwned " << spawnedJobs.size() << " jobs";
 
 	//removed newly spawned jobs
 	for(int i = spawnedJobs.size() - 1; i >= 0; i--){
