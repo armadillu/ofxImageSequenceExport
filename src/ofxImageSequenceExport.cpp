@@ -236,7 +236,7 @@ string ofxImageSequenceExport::getStatus(){
 
 	string msg = "### ofxImageSequenceExport####\nExporting!\nExported Frames: " + ofToString(state.exportedFrameCounter) +
 	"\nExport Queue Length: " + ofToString(pendingJobs.size()) + " ( max queue length is " + ofToString(state.maxPending) + ")" +
-	"\nCurrentnly Executing Jobs: " + ofToString(tasks.size()) + " ( max of " + ofToString(state.maxThreads) + " concurrent jobs )";
+	"\nCurrently Executing Jobs: " + ofToString(tasks.size()) + " ( max of " + ofToString(state.maxThreads) + " concurrent jobs )";
 	if (state.avgExportTime > 0){
 		msg += "\nAvg. Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms";
 	}
