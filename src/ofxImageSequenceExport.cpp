@@ -241,7 +241,7 @@ string ofxImageSequenceExport::getStatus(){
 		msg += "\nAvg. Frame Export Time: " + ofToString(state.avgExportTime * 1000, 1) + " ms";
 	}
 	if (state.avgFileSize > 0){
-		msg += "\nAvg. Frame File Size: " + ofxImageSequenceExport::bytesToHumanReadable(state.avgFileSize * 1024 * 1024, 2) + " MBytes";
+		msg += "\nAvg. Frame File Size: " + ofxImageSequenceExport::bytesToHumanReadable(state.avgFileSize * 1024 * 1024, 1);
 	}
 	if(state.expectedRenderLen > 0 && state.avgFileSize > 0){
 		msg += "\nEstimated Total Sequence File Size: " + ofxImageSequenceExport::bytesToHumanReadable(state.expectedRenderLen * state.avgFileSize * 1024 * 1024 , 1);
