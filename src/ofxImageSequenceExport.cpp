@@ -272,7 +272,7 @@ ofxImageSequenceExport::ExportJob ofxImageSequenceExport::runJob(ExportJob j){
 	#elif defined(TARGET_LINUX)
 	pthread_setname_np(pthread_self(), ("ofxImageSequenceExport job " + ofToString(j.frameID)).c_str());
 	#else
-	pthread_setname_np(pthread_self(), ("ofxImageSequenceExport job " + ofToString(j.frameID)).c_str());
+	pthread_setname_np(("ofxImageSequenceExport job " + ofToString(j.frameID)).c_str());
 	#endif
 
 	bool timeSample = (j.frameID%30 == 0);
